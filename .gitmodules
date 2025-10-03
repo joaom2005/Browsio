@@ -1,0 +1,6 @@
+[submodule "dependencies/curl"]
+	path = dependencies/curl
+	url = https://github.com/curl/curl.git
+[submodule "dependencies/spdlog"]
+	path = dependencies/spdlog
+	url = https://github.com/gabime/spdlog.git
