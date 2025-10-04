@@ -15,7 +15,7 @@ class Logger {
 public:
     enum class Level { Info, Warn, Error };
 
-    // Initialize logger (call once at program start)
+    // Initialize logger
     static void Init(std::string logFile = "", Level logLevel = Level::Info) {
         if (logFile.empty()){
             logFile = GetFilenameByCurrentDate();
@@ -99,12 +99,23 @@ private:
 // Use Macros so that, when compiling in release mode, no extra code will be included
 #ifndef NDEBUG
 
+/// @brief Macro to initialize the logger for console and writing to a file. It is a macro so that removing logging from release becomes easier
+/// @param LOG_FILE Path to save the log to. If empty, the file will be inside the logs directory with the time of execution as the title
+/// @param LEVEL The level to log at. By default is Info 
 #define LOG_INIT(LOG_FILE, LEVEL) Logger::Init(LOG_FILE, LEVEL);
 
+/// @brief Macro to change the logging level. It is a macro so that removing logging from release becomes easier
+/// @param LEVEL The level to log at.
 #define SET_LOG_LEVEL(LEVEL) Logger::SetLevel(LEVEL);
 
+/// @brief Macro to log to info. It is a macro so that removing logging from release becomes easier
+/// @param ... The first argument should b the text to log, and if there are more arguments, it should exist a '{}' inside the text
 #define LOG_INFO(...)  Logger::Info(__VA_ARGS__)
+/// @brief Macro to log to warning. It is a macro so that removing logging from release becomes easier
+/// @param ... The first argument should b the text to log, and if there are more arguments, it should exist a '{}' inside the text
 #define LOG_WARN(...)  Logger::Warn(__VA_ARGS__)
+/// @brief Macro to log to error. It is a macro so that removing logging from release becomes easier
+/// @param ... The first argument should b the text to log, and if there are more arguments, it should exist a '{}' inside the text
 #define LOG_ERROR(...) Logger::Error(__VA_ARGS__)
 
 #else

@@ -11,7 +11,9 @@ endif()
 
 find_package(OpenSSL REQUIRED)
 find_package(CURL REQUIRED)
+
 add_subdirectory(dependencies/spdlog)
+add_subdirectory(dependencies/SDL)
 
 include_directories("./" ${CURL_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
@@ -23,6 +25,13 @@ target_link_libraries(${PROJECT_NAME}
         OpenSSL::Crypto
         CURL::libcurl
         spdlog::spdlog
+        SDL3::SDL3
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_BINARY_DIR}/dependencies/SDL/SDL3.dll
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+)   

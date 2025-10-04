@@ -5,7 +5,7 @@
 
 class Connection{
     public:
-    static void GetWebsite(const char* link);
+    static void GetWebsite(const std::string& link);
 };
 
 #endif
