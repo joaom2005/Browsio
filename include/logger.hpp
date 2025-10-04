@@ -6,13 +6,38 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 #include <memory>
 #include <iostream>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <string>
 
 class Logger {
 public:
     enum class Level { Info, Warn, Error };
 
     // Initialize logger (call once at program start)
-    static void Init(const std::string& logFile = "logs/app.log") {
+    static void Init(std::string logFile = "", Level logLevel = Level::Info) {
+        if (logFile.empty()){
+            logFile = GetFilenameByCurrentDate();
+        }
+
+        spdlog::level::level_enum spdLogLevel;
+        switch (logLevel)
+        {
+        case Level::Info:
+            spdLogLevel = spdlog::level::info;
+            break;
+        case Level::Warn:
+            spdLogLevel = spdlog::level::warn;
+            break;
+        case Level::Error:
+            spdLogLevel = spdlog::level::err;
+            break;
+        default:
+            spdLogLevel = spdlog::level::info;
+            break;
+        }
+
         try {
             // Console sink
             auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -25,8 +50,8 @@ public:
             // Combine sinks
             s_logger = std::make_shared<spdlog::logger>("multi_sink", spdlog::sinks_init_list{console_sink, file_sink});
             spdlog::register_logger(s_logger);
-            s_logger->set_level(spdlog::level::info);
-            s_logger->flush_on(spdlog::level::info);
+            s_logger->set_level(spdLogLevel);
+            s_logger->flush_on(spdLogLevel);
 
             Info("Logger initialized!");
         } catch (const spdlog::spdlog_ex& ex) {
@@ -60,6 +85,38 @@ public:
 
 private:
     inline static std::shared_ptr<spdlog::logger> s_logger;
+
+    // Simple function to get the current time and use it as the log's name
+    inline static std::string GetFilenameByCurrentDate(const char* extension = ".log") {
+        auto now = std::chrono::system_clock::now();
+        auto localTime = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << "logs/" << std::put_time(std::localtime(&localTime), "%Y-%m-%d-%H-%M-%S") << extension;
+        return ss.str();
+    }
 };
+
+// Use Macros so that, when compiling in release mode, no extra code will be included
+#ifndef NDEBUG
+
+#define LOG_INIT(LOG_FILE, LEVEL) Logger::Init(LOG_FILE, LEVEL);
+
+#define SET_LOG_LEVEL(LEVEL) Logger::SetLevel(LEVEL);
+
+#define LOG_INFO(...)  Logger::Info(__VA_ARGS__)
+#define LOG_WARN(...)  Logger::Warn(__VA_ARGS__)
+#define LOG_ERROR(...) Logger::Error(__VA_ARGS__)
+
+#else
+
+#define LOG_INIT
+
+#define SET_LOG_LEVEL(LEVEL)
+
+#define LOG_INFO(...)
+#define LOG_WARN(...)
+#define LOG_ERROR(...)
+
+#endif
 
 #endif
