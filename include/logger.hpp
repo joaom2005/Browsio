@@ -130,4 +130,4 @@ private:
 
 #endif
 
-#endif
+#endif // BROWSIO_LOG_H

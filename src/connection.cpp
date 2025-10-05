@@ -8,7 +8,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     return size * nmemb;
 }
 
-void Connection::GetWebsite(const std::string& link) {
+std::string Connection::GetWebsite(const std::string& link) {
     CURL* curl;
     CURLcode res;
     std::string readBuffer;
@@ -24,8 +24,10 @@ void Connection::GetWebsite(const std::string& link) {
         if(res != CURLE_OK) {
             std::cerr << "curl_easy_perform() failed: " 
                       << curl_easy_strerror(res) << std::endl;
-        } else {
-            std::cout << readBuffer << std::endl;
+            return "";
         }
+
+        return readBuffer;
     }
+    return "";
 }

@@ -5,7 +5,7 @@
 
 class Connection{
     public:
-    static void GetWebsite(const std::string& link);
+    static std::string GetWebsite(const std::string& link);
 };
 
-#endif
+#endif // BROWSIO_CONNECTION_H
