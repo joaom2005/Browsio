@@ -17,7 +17,7 @@ add_subdirectory(dependencies/SDL)
 
 include_directories("./" ${CURL_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
-add_executable(${PROJECT_NAME} src/main.cpp src/Connection.cpp src/HTMLTokenize.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/connection.cpp src/HTMLTokenize.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
@@ -30,8 +30,14 @@ target_link_libraries(${PROJECT_NAME}
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_BINARY_DIR}/dependencies/SDL/SDL3.dll
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)   
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+else()
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_BINARY_DIR}/dependencies/SDL/libSDL3.so
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endif()

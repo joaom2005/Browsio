@@ -8,25 +8,63 @@
       "binaryDir": "${sourceDir}/build/${presetName}",
       "installDir": "${sourceDir}/out/install/${presetName}",
       "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
-        "CMAKE_TOOLCHAIN_FILE": "$env{USERPROFILE}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
     },
     {
-      "name": "debug",
-      "displayName": "Debug",
-      "description": "Debug build using Ninja",
+      "name": "debug-linux",
+      "displayName": "Debug - Linux",
+      "description": "Debug build using Ninja on Linux",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": "$env{USERPROFILE}/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_CXX_FLAGS_INIT": "-Wall -Wextra -Wpedantic -Werror"
       }
     },
     {
-      "name": "release",
-      "displayName": "Release",
-      "description": "Release build using Ninja",
+      "name": "debug-windows",
+      "displayName": "Debug - Windows",
+      "description": "Debug build using Ninja on Windows",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS_INIT": "-Wall -Wextra -Wpedantic -Werror",
+        "CMAKE_TOOLCHAIN_FILE": "$env{USERPROFILE}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "release-linux",
+      "displayName": "Release - Linux",
+      "description": "Release build using Ninja on linux",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "release-windows",
+      "displayName": "Release - Windows",
+      "description": "Release build using Ninja on Windows",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -36,14 +74,24 @@
   ],
   "buildPresets": [
     {
-      "name": "debug",
-      "configurePreset": "debug",
-      "displayName": "Build Debug"
+      "name": "debug-linux",
+      "configurePreset": "debug-linux",
+      "displayName": "Build Debug Linux"
     },
     {
-      "name": "release",
-      "configurePreset": "release",
-      "displayName": "Build Release"
+      "name": "debug-windows",
+      "configurePreset": "debug-windows",
+      "displayName": "Build Debug Windows"
+    },
+    {
+      "name": "release-linux",
+      "configurePreset": "release-linux",
+      "displayName": "Build Release Linux"
+    },
+    {
+      "name": "release-windows",
+      "configurePreset": "release-windows",
+      "displayName": "Build Release Windows"
     }
   ]
 }
