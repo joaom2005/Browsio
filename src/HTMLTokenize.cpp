@@ -3,37 +3,57 @@
 
 #include <stack>
 #include <cctype>
+#include <algorithm>
 
 enum class State
 {
-    TEXT = 0,
+    TEXT,
     TAG,
     ATTRIBUTE_NAME,
     ATTRIBUTE_VALUE
 };
 
+// Check if a string is empty
+bool isNullOrWhitespace(const std::string &str)
+{
+    return str.empty() || std::all_of(str.begin(), str.end(), [](char c)
+                                      { return std::isspace(static_cast<unsigned char>(c)); });
+}
+
 HTMLTokenize::HTMLTokenize(std::string &htmlCode)
 {
-    LOG_INFO("Starting Tokenization of the Website's HTML code");
-    // Initialize the DOM node
-    auto DOMNode = std::make_shared<Node>();
+    this->htmlCode = htmlCode;
+}
 
-    DOMNode->name = "DOM";
-    DOMNode->childrenNodes = std::vector<std::shared_ptr<Node>>();
+std::vector<Token> HTMLTokenize::Tokenize()
+{
+    // Vector with the tokens to return
+    std::vector<Token> tokenList = std::vector<Token>();
 
-    // Create a stack to save the open nodes.
-    std::stack<std::shared_ptr<Node>> openNodes;
-    openNodes.push(DOMNode);
-
-    // Temporary values
+    // Temp variables
     std::string buffer = std::string();       // String to save the current read value
     std::string atributeName = std::string(); // String to save the current atribute name
-    Node tempNode = Node();                   // Temporary node
+    Token tempToken;                          // Temporary token to save some info
 
-    // Loop through the code - this is a state machine, where depenending on the curent state, the text will be read differently
-    bool readingText = false;  // Store whether we are currently inside a string (eg. ""; '')
-    char currentCharacter;     // Save the current character. The variable is created outside so that it doesn't need to be created in every iteration
-    State state = State::TEXT; // Current read state
+    // Variables to loop through the html code
+    char currentCharacter = '\0';  // Variable to store the current read character.
+    char quoteChar = '\0';         // Variable used to check if we are inside a string
+    State state = State::TEXT;     // Current read state
+    bool isSelfClosingTag = false; // Whether the current tag is self-closing
+    bool isClosingTag = false;     // Whether the current tag is of type closing
+
+    // Helper lambda to create an tag
+    auto emitTag = [&](Token::Type type)
+    {
+        tempToken.type = type;
+        tempToken.name = buffer;
+        tokenList.push_back(tempToken);
+        tempToken = Token(); // reset
+        buffer.clear();
+        state = State::TEXT;
+        isSelfClosingTag = false;
+    };
+
     for (size_t i = 0; i < htmlCode.size(); i++)
     {
         // Save the current value to not have to read from the string more than once per iteration
@@ -46,6 +66,22 @@ HTMLTokenize::HTMLTokenize(std::string &htmlCode)
             // When reading normal text, if a '<' is encountered, switch to tag mode and save the current buffer
             if (currentCharacter == '<')
             {
+                if (htmlCode[i + 1] == '/')
+                {
+                    isClosingTag = true;
+                    i++;
+                }
+                else
+                {
+                    isClosingTag = false;
+                }
+                // If the buffer isn't empty, save that as text
+                if (!isNullOrWhitespace(buffer))
+                {
+                    Token textToken = Token(Token::Type::TEXT, buffer);
+                    tokenList.push_back(textToken);
+                }
+
                 buffer = "";
                 state = State::TAG;
             }
@@ -63,7 +99,7 @@ HTMLTokenize::HTMLTokenize(std::string &htmlCode)
                 if (!buffer.empty())
                 {
                     // Save the node's name and empty the buffer
-                    tempNode.name = buffer;
+                    tempToken.name = buffer;
                     buffer = "";
 
                     state = State::ATTRIBUTE_NAME;
@@ -73,7 +109,54 @@ HTMLTokenize::HTMLTokenize(std::string &htmlCode)
                     state = State::ATTRIBUTE_NAME;
                 }
             }
-            // TODO Handle what happens if we reach the end here
+            // If the current character is /, enable self-closing
+            else if (currentCharacter == '/')
+            {
+                isSelfClosingTag = true;
+            }
+            // Handle closing of the tag
+            else if (currentCharacter == '>')
+            {
+                // Handle in case it's a closing tag
+                if (isClosingTag)
+                {
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::TAG_CLOSE;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    isSelfClosingTag = false;
+                    state = State::TEXT;
+                }
+                // Handle if a tag that ends with '/>' like <br/>
+                if (isSelfClosingTag)
+                {
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::SELF_CLOSE;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    isSelfClosingTag = false;
+                    state = State::TEXT;
+                }
+                else
+                // Handle if a tag that ends with '>' like <br>
+                {
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::TAG_OPEN;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    state = State::TEXT;
+                }
+                buffer = "";
+            }
             // Else just add the current character to the buffer
             else
             {
@@ -87,7 +170,42 @@ HTMLTokenize::HTMLTokenize(std::string &htmlCode)
                 buffer = "";
                 state = State::ATTRIBUTE_VALUE;
             }
-            // TODO Handle end of tag
+            // If the current character is /, enable self-closing
+            else if (currentCharacter == '/')
+            {
+                isSelfClosingTag = true;
+            }
+            // Handle closing of the tag
+            else if (currentCharacter == '>')
+            {
+                // Handle if a tag that ends with '/>' like <br/>
+                if (isSelfClosingTag)
+                {
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::SELF_CLOSE;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    isSelfClosingTag = false;
+                    state = State::TEXT;
+                }
+                else
+                // Handle if a tag that ends with '>' like <br>
+                {
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::TAG_OPEN;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    state = State::TEXT;
+                }
+
+                buffer = "";
+            }
             else
             {
                 buffer += currentCharacter;
@@ -95,28 +213,64 @@ HTMLTokenize::HTMLTokenize(std::string &htmlCode)
             break;
         case State::ATTRIBUTE_VALUE:
             // If we're reading text, we should remember that incase there's a space
-            if ((currentCharacter == '\'' || currentCharacter == '\"') && !buffer.empty())
-            {
-                readingText = !readingText;
-            }
+            if (quoteChar == '\0' && (currentCharacter == '\'' || currentCharacter == '\"'))
+                quoteChar = currentCharacter;
+            else if (currentCharacter == quoteChar)
+                quoteChar = '\0';
             // If we encounter a space and we're not reading text (""/''), then the value ended
-            else if ((std::isspace(currentCharacter) && !readingText))
+            else if ((std::isspace(currentCharacter) && quoteChar == '\0'))
             {
-                tempNode.attributes[atributeName] = buffer;
+                tempToken.attributes[atributeName] = buffer;
                 atributeName = "";
                 buffer = "";
                 state = State::TAG;
+            }
+            // If the current character is /, enable self-closing
+            else if (currentCharacter == '/')
+            {
+                isSelfClosingTag = true;
+            }
+            // Handle closing of the tag
+            else if (currentCharacter == '>')
+            {
+                // Handle if a tag that ends with '/>' like <br/>
+                if (isSelfClosingTag)
+                {
+                    tempToken.attributes[atributeName] = buffer;
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::SELF_CLOSE;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    isSelfClosingTag = false;
+                    state = State::TEXT;
+                }
+                else
+                // Handle if a tag that ends with '>' like <br>
+                {
+                    tempToken.attributes[atributeName] = buffer;
+                    tempToken.name = buffer;
+                    tempToken.type = Token::Type::TAG_OPEN;
+
+                    tokenList.push_back(tempToken);
+
+                    tempToken = Token();
+
+                    state = State::TEXT;
+                }
+                buffer = "";
             }
             else
             {
                 buffer += currentCharacter;
             }
+            break;
         default:
             break;
         }
     }
-}
 
-HTMLTokenize::~HTMLTokenize()
-{
+    return tokenList;
 }

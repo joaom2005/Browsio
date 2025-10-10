@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16.0)
 project(Browsio VERSION 0.0.0 LANGUAGES CXX)
 
-set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
-
 # Fetch used libraries
 if(WIN32)
     set(CURL_INCLUDE_DIR "${workspaceFolder}/dependencies/curl/include") 

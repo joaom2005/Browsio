@@ -6,15 +6,24 @@
 #include <string>
 #include <vector>
 
-// The node/token representing an element
-struct Node
+// Token representation
+struct Token
 {
-    std::string name;                                        // Token name
-    std::unordered_map<std::string, std::string> attributes; // Attributes like class or id
-    std::vector<std::shared_ptr<Node>> childrenNodes;        // The children of this token
-    Node *parentNode;                                        // The parent token that this one belongs to
+    enum class Type
+    {
+        TAG_OPEN,
+        TAG_CLOSE,
+        TEXT,
+        ATTRIBUTE,
+        SELF_CLOSE
+    };
+    Type type;
+    std::string name;
+    std::unordered_map<std::string, std::string> attributes;
 
-    Node() = default;
+    inline Token(Type _type, std::string &_name, std::unordered_map<std::string, std::string> _attributes) : type(_type), name(_name), attributes(_attributes) {};
+    inline Token(Type _type, std::string &_name) : type(_type), name(_name) {};
+    Token() = default;
 };
 
 // Class to use to create the DOM
@@ -22,7 +31,11 @@ class HTMLTokenize
 {
 public:
     HTMLTokenize(std::string &htmlCode);
-    ~HTMLTokenize();
+
+    std::vector<Token> Tokenize();
+
+private:
+    std::string htmlCode;
 };
 
 #endif // DOM_PARSER_TOKENIZER_H
