@@ -20,11 +20,13 @@ bool isNullOrWhitespace(const std::string &str)
                                       { return std::isspace(static_cast<unsigned char>(c)); });
 }
 
+// Class initializer
 HTMLTokenize::HTMLTokenize(std::string &htmlCode)
 {
     this->htmlCode = htmlCode;
 }
 
+// Tokenize the HTML code
 std::vector<Token> HTMLTokenize::Tokenize()
 {
     // Vector with the tokens to return
@@ -66,7 +68,7 @@ std::vector<Token> HTMLTokenize::Tokenize()
             // When reading normal text, if a '<' is encountered, switch to tag mode and save the current buffer
             if (currentCharacter == '<')
             {
-                if (htmlCode[i + 1] == '/')
+                if (i + 1 < htmlCode.size() && htmlCode[i + 1] == '/')
                 {
                     isClosingTag = true;
                     i++;
@@ -120,40 +122,17 @@ std::vector<Token> HTMLTokenize::Tokenize()
                 // Handle in case it's a closing tag
                 if (isClosingTag)
                 {
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::TAG_CLOSE;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    isSelfClosingTag = false;
-                    state = State::TEXT;
+                    emitTag(Token::Type::TAG_CLOSE);
                 }
                 // Handle if a tag that ends with '/>' like <br/>
-                if (isSelfClosingTag)
+                else if (isSelfClosingTag)
                 {
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::SELF_CLOSE;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    isSelfClosingTag = false;
-                    state = State::TEXT;
+                    emitTag(Token::Type::SELF_CLOSE);
                 }
                 else
                 // Handle if a tag that ends with '>' like <br>
                 {
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::TAG_OPEN;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    state = State::TEXT;
+                    emitTag(Token::Type::TAG_OPEN);
                 }
                 buffer = "";
             }
@@ -178,30 +157,16 @@ std::vector<Token> HTMLTokenize::Tokenize()
             // Handle closing of the tag
             else if (currentCharacter == '>')
             {
+                tempToken.attributes[buffer] = "";
                 // Handle if a tag that ends with '/>' like <br/>
                 if (isSelfClosingTag)
                 {
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::SELF_CLOSE;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    isSelfClosingTag = false;
-                    state = State::TEXT;
+                    emitTag(Token::Type::SELF_CLOSE);
                 }
                 else
                 // Handle if a tag that ends with '>' like <br>
                 {
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::TAG_OPEN;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    state = State::TEXT;
+                    emitTag(Token::Type::TAG_OPEN);
                 }
 
                 buffer = "";
@@ -233,32 +198,16 @@ std::vector<Token> HTMLTokenize::Tokenize()
             // Handle closing of the tag
             else if (currentCharacter == '>')
             {
+                tempToken.attributes[atributeName] = buffer;
                 // Handle if a tag that ends with '/>' like <br/>
                 if (isSelfClosingTag)
                 {
-                    tempToken.attributes[atributeName] = buffer;
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::SELF_CLOSE;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    isSelfClosingTag = false;
-                    state = State::TEXT;
+                    emitTag(Token::Type::SELF_CLOSE);
                 }
                 else
                 // Handle if a tag that ends with '>' like <br>
                 {
-                    tempToken.attributes[atributeName] = buffer;
-                    tempToken.name = buffer;
-                    tempToken.type = Token::Type::TAG_OPEN;
-
-                    tokenList.push_back(tempToken);
-
-                    tempToken = Token();
-
-                    state = State::TEXT;
+                    emitTag(Token::Type::TAG_OPEN);
                 }
                 buffer = "";
             }
@@ -271,6 +220,10 @@ std::vector<Token> HTMLTokenize::Tokenize()
             break;
         }
     }
+
+    // Check to see if there's anything left
+    if (!isNullOrWhitespace(buffer))
+        tokenList.push_back(Token(Token::Type::TEXT, buffer));
 
     return tokenList;
 }
