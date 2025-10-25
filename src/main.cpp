@@ -1,6 +1,6 @@
 #include "include/connection.hpp"
 #include "include/logger.hpp"
-#include "include/HTMLTokenize.hpp"
+#include "include/HTMLParser.hpp"
 
 int main() {
     // Initialize Logger
@@ -13,4 +13,5 @@ int main() {
     std::string htmlCode = Connection::GetWebsite(webSiteLink);
 
     HTMLTokenize Tokens = HTMLTokenize(htmlCode);
+    Tokens.Tokenize();
 }

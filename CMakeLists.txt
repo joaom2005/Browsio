@@ -15,7 +15,7 @@ add_subdirectory(dependencies/SDL)
 
 include_directories("./" ${CURL_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
-add_executable(${PROJECT_NAME} src/main.cpp src/connection.cpp src/HTMLTokenize.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/connection.cpp src/HTMLParser.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
